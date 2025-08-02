@@ -1,0 +1,53 @@
+{
+  "name": "salesforce-cli-mcp-server",
+  "version": "1.0.0",
+  "description": "Model Context Protocol server for Salesforce CLI integration",
+  "type": "module",
+  "bin": {
+    "salesforce-cli-mcp": "./build/index.js"
+  },
+  "files": [
+    "build",
+    "README.md"
+  ],
+  "scripts": {
+    "setup": "node setup.js",
+    "build": "tsc && chmod +x build/index.js",
+    "dev": "tsc --watch",
+    "prepare": "npm run build",
+    "inspector": "npx @modelcontextprotocol/inspector build/index.js",
+    "test": "npm run build && npm run inspector",
+    "clean": "rm -rf build",
+    "start": "node build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/timaw513-emergenit/salesforce-cli-mcp-server"
+  },
+  "keywords": [
+    "salesforce",
+    "cli",
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "claude",
+    "assistant"
+  ],
+  "author": "timaw513-emergenit",
+  "license": "MIT",
+  "homepage": "https://github.com/timaw513-emergenit/salesforce-cli-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/timaw513-emergenit/salesforce-cli-mcp-server/issues"
+  }
+}

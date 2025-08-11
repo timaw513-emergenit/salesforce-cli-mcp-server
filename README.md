@@ -1,6 +1,14 @@
 # Salesforce CLI MCP Server
 
-A Model Context Protocol (MCP) server that integrates with the Salesforce CLI, allowing AI assistants to interact with Salesforce orgs through natural language commands.
+A Model Context Protocol (MCP) server that integrates with the Salesforce CLI, allowing AI assistants to interact with Salesforce orgs through natural language commands. **Now with Web UI!**
+
+## 🆕 New Features
+
+- **🌐 Web UI**: Interactive web interface for easy Salesforce CLI operations
+- **🔗 HTTP Server**: RESTful API endpoints alongside MCP protocol
+- **📊 Real-time Status**: Live server health monitoring
+- **🎯 Quick Actions**: One-click shortcuts for common operations
+- **📋 Copy Results**: Easy result copying and formatting
 
 ## Features
 
@@ -10,6 +18,8 @@ A Model Context Protocol (MCP) server that integrates with the Salesforce CLI, a
 - **Testing**: Run Apex tests
 - **Package Management**: Create and manage Salesforce packages
 - **Custom Commands**: Execute any Salesforce CLI command
+- **Web Interface**: User-friendly web UI for all operations
+- **HTTP API**: RESTful endpoints for programmatic access
 
 ## Prerequisites
 
@@ -37,15 +47,81 @@ npm install
 npm run build
 ```
 
-### 4. Configure your MCP client
+### 4. Choose your mode
 
-#### For Claude Desktop
+#### Option A: Web UI Mode (Recommended)
+Start the server with web interface:
+```bash
+npm run web
+```
+
+Then open your browser to: **http://localhost:3000**
+
+#### Option B: STDIO Mode (for MCP clients)
+Configure your MCP client as shown below.
+
+## 🌐 Web UI Usage
+
+The web interface provides an intuitive way to interact with your Salesforce orgs:
+
+### Features:
+- **🚀 Interactive Forms**: Fill out forms for each Salesforce CLI command
+- **📊 Quick Actions**: One-click shortcuts for common tasks
+- **📋 Live Results**: Real-time command execution with formatted output
+- **📱 Responsive Design**: Works on desktop, tablet, and mobile
+- **🔄 Status Monitoring**: Real-time server health indicators
+
+### Available Operations:
+- **List Orgs**: View all authorized Salesforce orgs
+- **Execute SOQL**: Run queries with syntax highlighting
+- **Custom Commands**: Execute any Salesforce CLI command
+- **Deploy/Retrieve**: Metadata operations with progress tracking
+- **Run Tests**: Execute Apex tests with detailed results
+
+### Quick Actions:
+- **List Orgs**: Instantly view all authorized orgs
+- **Query Accounts**: Pre-filled SOQL query for Account records
+- **Org Info**: Display current org details
+
+## API Endpoints
+
+When running in HTTP mode, the server provides these endpoints:
+
+### Core Endpoints:
+- `GET /` - Web UI interface
+- `GET /health` - Health check
+- `GET /api/status` - Detailed server status
+- `GET /api/tools` - Available tools list
+- `POST /api/execute` - Execute Salesforce CLI commands
+- `POST /mcp` - MCP protocol endpoint
+
+### Example API Usage:
+
+```bash
+# Execute a SOQL query
+curl -X POST http://localhost:3000/api/execute \
+  -H "Content-Type: application/json" \
+  -d '{"command": "data query --json --query \"SELECT Id, Name FROM Account LIMIT 5\""}'
+
+# List all orgs
+curl -X POST http://localhost:3000/api/execute \
+  -H "Content-Type: application/json" \
+  -d '{"command": "org list --json"}'
+
+# Check server health
+curl http://localhost:3000/health
+```
+
+## MCP Client Configuration
+
+### For Claude Desktop
 
 Add this configuration to your Claude Desktop MCP settings file:
 
 **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
 
+#### STDIO Mode:
 ```json
 {
   "mcpServers": {
@@ -57,7 +133,19 @@ Add this configuration to your Claude Desktop MCP settings file:
 }
 ```
 
-#### For VS Code with MCP Extension
+#### HTTP Mode:
+```json
+{
+  "mcpServers": {
+    "salesforce-cli-http": {
+      "command": "curl",
+      "args": ["-X", "POST", "http://localhost:3000/mcp"]
+    }
+  }
+}
+```
+
+### For VS Code with MCP Extension
 
 Create a `.vscode/mcp.json` file in your project root:
 
@@ -73,11 +161,26 @@ Create a `.vscode/mcp.json` file in your project root:
 }
 ```
 
-### 5. Test the setup
+## Available Commands
 
-1. Restart your MCP client
-2. Look for Salesforce CLI tools
-3. Try: "List all my Salesforce orgs"
+### NPM Scripts
+
+```bash
+# Development
+npm run build          # Build TypeScript
+npm run dev            # Watch mode for development
+npm run clean          # Clean build directory
+
+# Running
+npm run start          # Start in STDIO mode
+npm run http           # Start HTTP server (with Web UI)
+npm run web            # Alias for http mode
+npm run ui             # Alias for http mode
+
+# Testing
+npm run inspector      # Run MCP Inspector
+npm run test           # Build and run inspector
+```
 
 ## Available Tools
 
@@ -107,30 +210,37 @@ Execute any Salesforce CLI command.
 
 ## Usage Examples
 
+### Via Web UI
+1. Open http://localhost:3000
+2. Select a tool from the sidebar
+3. Fill out the form parameters
+4. Click "Execute" and view results
+
+### Via Natural Language (MCP clients)
 Once configured, you can use natural language with your AI assistant:
 
-### Org Management
+#### Org Management
 - "List all my Salesforce orgs"
 - "Show me the connection status of all orgs"
 
-### Data Queries
+#### Data Queries
 - "Query all accounts in my org"
 - "Get all contacts where the email contains 'example.com'"
 - "Run this SOQL query: SELECT Id, Name FROM Account LIMIT 10"
 
-### Metadata Operations
+#### Metadata Operations
 - "Deploy all metadata to my sandbox"
 - "Retrieve the Account object metadata"
 - "Deploy only the AccountController class"
 
-### Testing
+#### Testing
 - "Run all Apex tests in my org"
 - "Run tests for the AccountTest class"
 
-### Data Import
+#### Data Import
 - "Import the accounts.csv file as Account records"
 
-### Custom Commands
+#### Custom Commands
 - "Run the command: org display --target-org myorg"
 
 ## Development
@@ -149,6 +259,15 @@ Run in development mode with auto-rebuild:
 npm run dev
 ```
 
+### Web UI Development
+For web UI development, start the HTTP server and make changes to files in the `public/` directory:
+
+```bash
+npm run web
+```
+
+The server will serve static files from the `public/` directory automatically.
+
 ## Security Considerations
 
 This MCP server executes Salesforce CLI commands directly on your system. Ensure that:
@@ -157,6 +276,7 @@ This MCP server executes Salesforce CLI commands directly on your system. Ensure
 2. You have proper backup procedures in place
 3. You understand the implications of the commands being executed
 4. You review any destructive operations before confirming
+5. The HTTP server (if used) is only accessible from trusted networks
 
 ## Troubleshooting
 
@@ -169,11 +289,19 @@ This MCP server executes Salesforce CLI commands directly on your system. Ensure
    - Make sure you have authorized at least one Salesforce org using `sf org login web`
 
 3. **"Permission denied"**
-   - Ensure the build/index.js file has execute permissions: `chmod +x build/index.js`
+   - Ensure the build files have execute permissions: `chmod +x build/*.js`
 
 4. **"Module not found"**
    - Run `npm install` to install dependencies
    - Run `npm run build` to compile TypeScript
+
+5. **"Port already in use"**
+   - Change the port: `MCP_PORT=3001 npm run web`
+
+6. **Web UI not loading**
+   - Ensure you've run `npm run build` first
+   - Check that `public/index.html` exists
+   - Verify server is running: `curl http://localhost:3000/health`
 
 ## Contributing
 
@@ -186,3 +314,7 @@ This MCP server executes Salesforce CLI commands directly on your system. Ensure
 ## License
 
 MIT License - see LICENSE file for details.
+
+---
+
+**🌟 Now with Web UI! Access your Salesforce CLI through a beautiful, intuitive web interface at http://localhost:3000**

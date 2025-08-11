@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce CLI MCP Server</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .status-online { background: #4CAF50; }
+        .status-offline { background: #f44336; }
+        .status-loading { background: #ff9800; }
+
+        .main-content {
+            display: flex;
+            min-height: 600px;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 1px solid #e9ecef;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+        }
+
+        .tool-section {
+            margin-bottom: 30px;
+        }
+
+        .tool-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+        }
+
+        .tool-button {
+            display: block;
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            font-size: 0.95em;
+        }
+
+        .tool-button:hover {
+            border-color: #3498db;
+            background: #f8f9ff;
+            transform: translateX(5px);
+        }
+
+        .tool-button.active {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+
+        .execute-btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+
+        .execute-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .execute-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .results-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .results-container {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #34495e;
+        }
+
+        .results-container.error {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .results-container.success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .quick-action {
+            padding: 15px;
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .quick-action:hover {
+            border-color: #3498db;
+            background: #f8f9ff;
+        }
+
+        .quick-action h4 {
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .quick-action p {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .copy-btn {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #7f8c8d;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Salesforce CLI MCP Server</h1>
+            <p>Web Interface for Model Context Protocol Integration</p>
+            <div id="status-badge" class="status-badge status-loading">Checking...</div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="tool-section">
+                    <h3>📊 Quick Actions</h3>
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="loadQuickAction('listOrgs')">
+                            <h4>List Orgs</h4>
+                            <p>Show all authorized orgs</p>
+                        </div>
+                        <div class="quick-action" onclick="loadQuickAction('queryAccounts')">
+                            <h4>Query Accounts</h4>
+                            <p>Get all account records</p>
+                        </div>
+                        <div class="quick-action" onclick="loadQuickAction('orgInfo')">
+                            <h4>Org Info</h4>
+                            <p>Display current org details</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3>🛠️ Available Tools</h3>
+                    <button class="tool-button active" onclick="selectTool('sf_org_list')">
+                        sf_org_list - List Orgs
+                    </button>
+                    <button class="tool-button" onclick="selectTool('sf_data_query')">
+                        sf_data_query - Execute SOQL
+                    </button>
+                    <button class="tool-button" onclick="selectTool('sf_custom_command')">
+                        sf_custom_command - Custom Command
+                    </button>
+                </div>
+            </div>
+
+            <div class="content">
+                <div id="tool-forms">
+                    <!-- sf_org_list form -->
+                    <div id="form-sf_org_list" class="form-section">
+                        <h3>📋 List Salesforce Orgs</h3>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="org_list_all">
+                                <label for="org_list_all">Show all orgs (including expired and deleted)</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="org_list_clean">
+                                <label for="org_list_clean">Clean local org authorization files</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="org_list_skip_connection">
+                                <label for="org_list_skip_connection">Skip connection status check</label>
+                            </div>
+                        </div>
+                        <button class="execute-btn" onclick="executeTool('sf_org_list')">Execute Command</button>
+                    </div>
+
+                    <!-- sf_data_query form -->
+                    <div id="form-sf_data_query" class="form-section hidden">
+                        <h3>🔍 Execute SOQL Query</h3>
+                        <div class="form-group">
+                            <label for="query_soql">SOQL Query *</label>
+                            <textarea id="query_soql" placeholder="SELECT Id, Name FROM Account LIMIT 10"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="query_target_org">Target Org (optional)</label>
+                            <input type="text" id="query_target_org" placeholder="username@example.com or alias">
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="query_tooling_api">
+                                <label for="query_tooling_api">Use Tooling API</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="query_bulk">
+                                <label for="query_bulk">Use Bulk API 2.0</label>
+                            </div>
+                        </div>
+                        <button class="execute-btn" onclick="executeTool('sf_data_query')">Execute Query</button>
+                    </div>
+
+                    <!-- sf_custom_command form -->
+                    <div id="form-sf_custom_command" class="form-section hidden">
+                        <h3>⚡ Custom Command</h3>
+                        <div class="form-group">
+                            <label for="custom_command">Salesforce CLI Command *</label>
+                            <textarea id="custom_command" placeholder="org display --target-org myorg"></textarea>
+                            <small style="color: #7f8c8d;">Enter the command without the 'sf' prefix</small>
+                        </div>
+                        <button class="execute-btn" onclick="executeTool('sf_custom_command')">Execute Command</button>
+                    </div>
+                </div>
+
+                <div id="results-section" class="results-section hidden">
+                    <h3>📋 Results <button class="copy-btn" onclick="copyResults()">Copy</button></h3>
+                    <div id="results-container" class="results-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTool = 'sf_org_list';
+        const API_BASE = window.location.origin;
+
+        // Check server status on load
+        async function checkServerStatus() {
+            try {
+                const response = await axios.get(`${API_BASE}/health`);
+                document.getElementById('status-badge').className = 'status-badge status-online';
+                document.getElementById('status-badge').textContent = 'Online';
+            } catch (error) {
+                document.getElementById('status-badge').className = 'status-badge status-offline';
+                document.getElementById('status-badge').textContent = 'Offline';
+            }
+        }
+
+        function selectTool(toolName) {
+            // Update button states
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Hide all forms
+            document.querySelectorAll('[id^="form-"]').forEach(form => form.classList.add('hidden'));
+            
+            // Show selected form
+            document.getElementById(`form-${toolName}`).classList.remove('hidden');
+            
+            currentTool = toolName;
+        }
+
+        async function executeTool(toolName) {
+            const button = event.target;
+            const originalText = button.textContent;
+            
+            // Disable button and show loading
+            button.disabled = true;
+            button.innerHTML = '<span class="loading"></span> Executing...';
+            
+            try {
+                const args = collectFormData(toolName);
+                console.log('Executing tool:', toolName, 'with args:', args);
+                
+                const response = await makeToolCall(toolName, args);
+                showResults(response, false);
+                
+            } catch (error) {
+                console.error('Error executing tool:', error);
+                showResults(error.message || 'Unknown error occurred', true);
+            } finally {
+                // Re-enable button
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
+        async function makeToolCall(toolName, args) {
+            // Build SF CLI command based on tool and args
+            let command = '';
+            
+            switch(toolName) {
+                case 'sf_org_list':
+                    command = 'org list --json';
+                    if (args.all) command += ' --all';
+                    if (args.clean) command += ' --clean';
+                    if (args.skipConnectionStatus) command += ' --skip-connection-status';
+                    break;
+                case 'sf_data_query':
+                    command = `data query --json --query "${args.query}"`;
+                    if (args.targetOrg) command += ` --target-org ${args.targetOrg}`;
+                    if (args.useToolingApi) command += ' --use-tooling-api';
+                    if (args.bulk) command += ' --use-bulk';
+                    break;
+                case 'sf_custom_command':
+                    command = args.command;
+                    break;
+            }
+            
+            // Make a call to our custom API endpoint
+            const response = await axios.post(`${API_BASE}/api/execute`, { command });
+            return response.data;
+        }
+
+        function collectFormData(toolName) {
+            const args = {};
+            
+            // Remove undefined values
+            const cleanArgs = (obj) => {
+                Object.keys(obj).forEach(key => {
+                    if (obj[key] === undefined || obj[key] === '') {
+                        delete obj[key];
+                    }
+                });
+                return obj;
+            };
+            
+            switch(toolName) {
+                case 'sf_org_list':
+                    args.all = document.getElementById('org_list_all').checked || undefined;
+                    args.clean = document.getElementById('org_list_clean').checked || undefined;
+                    args.skipConnectionStatus = document.getElementById('org_list_skip_connection').checked || undefined;
+                    break;
+                    
+                case 'sf_data_query':
+                    args.query = document.getElementById('query_soql').value;
+                    args.targetOrg = document.getElementById('query_target_org').value || undefined;
+                    args.useToolingApi = document.getElementById('query_tooling_api').checked || undefined;
+                    args.bulk = document.getElementById('query_bulk').checked || undefined;
+                    break;
+                    
+                case 'sf_custom_command':
+                    args.command = document.getElementById('custom_command').value;
+                    break;
+            }
+            
+            return cleanArgs(args);
+        }
+
+        function showResults(data, isError = false) {
+            const resultsSection = document.getElementById('results-section');
+            const resultsContainer = document.getElementById('results-container');
+            
+            resultsSection.classList.remove('hidden');
+            
+            // Format the data
+            let formattedData;
+            if (typeof data === 'string') {
+                formattedData = data;
+            } else {
+                formattedData = JSON.stringify(data, null, 2);
+            }
+            
+            resultsContainer.textContent = formattedData;
+            
+            // Apply appropriate styling
+            resultsContainer.className = 'results-container';
+            if (isError) {
+                resultsContainer.classList.add('error');
+            } else {
+                resultsContainer.classList.add('success');
+            }
+            
+            // Scroll to results
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function copyResults() {
+            const resultsContainer = document.getElementById('results-container');
+            navigator.clipboard.writeText(resultsContainer.textContent).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        function loadQuickAction(action) {
+            switch(action) {
+                case 'listOrgs':
+                    selectTool('sf_org_list');
+                    break;
+                case 'queryAccounts':
+                    selectTool('sf_data_query');
+                    document.getElementById('query_soql').value = 'SELECT Id, Name, Type, Industry FROM Account LIMIT 10';
+                    break;
+                case 'orgInfo':
+                    selectTool('sf_custom_command');
+                    document.getElementById('custom_command').value = 'org display';
+                    break;
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServerStatus();
+            
+            // Check status every 30 seconds
+            setInterval(checkServerStatus, 30000);
+        });
+    </script>
+</body>
+</html>

@@ -1,31 +1,39 @@
 {
   "name": "salesforce-cli-mcp-server",
   "version": "1.0.0",
-  "description": "Model Context Protocol server for Salesforce CLI integration",
+  "description": "Model Context Protocol server for Salesforce CLI integration with Web UI",
   "type": "module",
   "bin": {
     "salesforce-cli-mcp": "./build/index.js"
   },
   "files": [
     "build",
+    "public",
     "README.md"
   ],
   "scripts": {
     "setup": "node setup.js",
-    "build": "tsc && chmod +x build/index.js",
+    "build": "tsc && chmod +x build/index.js && chmod +x build/http-server.js",
     "dev": "tsc --watch",
     "prepare": "npm run build",
     "inspector": "npx @modelcontextprotocol/inspector build/index.js",
     "test": "npm run build && npm run inspector",
     "clean": "rm -rf build",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "http": "npm run build && node build/http-server.js",
+    "ui": "npm run http",
+    "web": "npm run http"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
     "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.24",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
     "typescript": "^5.3.3"
   },
   "engines": {
@@ -42,7 +50,9 @@
     "model-context-protocol",
     "ai",
     "claude",
-    "assistant"
+    "assistant",
+    "web-ui",
+    "http-server"
   ],
   "author": "timaw513-emergenit",
   "license": "MIT",
